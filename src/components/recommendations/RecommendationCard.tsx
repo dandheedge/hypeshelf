@@ -14,7 +14,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { useCurrentUser } from "@/hooks/useCurrentUser";
 import type { Recommendation } from "@/types";
 
 interface RecommendationCardProps {
@@ -26,11 +25,13 @@ export function RecommendationCard({
   recommendation,
   onDelete,
 }: RecommendationCardProps) {
-  const { user: currentUser } = useCurrentUser();
   const deleteRecommendation = useMutation(api.recommendations.remove);
   const markAsStaffPick = useMutation(api.recommendations.markAsStaffPick);
 
-  const isAdmin = currentUser?.role === "admin";
+  // Use server-provided auth context for security
+  const isAdmin = recommendation.currentUserRole === "admin";
+  const isOwner = recommendation.isOwner === true;
+  const canDelete = isAdmin || isOwner;
 
   const handleDelete = async () => {
     if (confirm("Are you sure you want to delete this recommendation?")) {
@@ -54,8 +55,8 @@ export function RecommendationCard({
             <CardTitle className="flex items-center gap-2">
               {recommendation.title}
               {recommendation.isStaffPick && (
-                <Badge variant="secondary" className="gap-1">
-                  <Star className="h-3 w-3" />
+                <Badge variant="category" className="gap-1">
+                  <Star className="h-3 w-3 text-white" />
                   Staff Pick
                 </Badge>
               )}
@@ -68,14 +69,15 @@ export function RecommendationCard({
               {recommendation.userName}
             </CardDescription>
           </div>
-          {isAdmin && (
+          {(isAdmin || isOwner) && (
             <div className="flex gap-2">
-              {!recommendation.isStaffPick && (
+              {isAdmin && !recommendation.isStaffPick && (
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={handleMarkAsStaffPick}
                   title="Mark as Staff Pick"
+                  className="hover:text-[var(--brand-primary)] hover:bg-[var(--brand-primary)]/10"
                 >
                   <Star className="h-4 w-4" />
                 </Button>
@@ -85,6 +87,7 @@ export function RecommendationCard({
                 size="icon"
                 onClick={handleDelete}
                 title="Delete"
+                className="hover:text-[var(--brand-primary)] hover:bg-[var(--brand-primary)]/10"
               >
                 <Trash2 className="h-4 w-4" />
               </Button>
@@ -93,7 +96,7 @@ export function RecommendationCard({
         </div>
       </CardHeader>
       <CardContent>
-        <Badge variant="outline" className="mb-3">
+        <Badge variant="category" className="mb-3">
           {recommendation.genre}
         </Badge>
         <p className="text-sm text-muted-foreground">{recommendation.blurb}</p>
@@ -102,7 +105,7 @@ export function RecommendationCard({
             href={recommendation.link}
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-3 inline-block text-sm text-primary hover:underline"
+            className="mt-3 inline-block text-sm text-[var(--brand-primary)] hover:underline"
           >
             View Link →
           </a>

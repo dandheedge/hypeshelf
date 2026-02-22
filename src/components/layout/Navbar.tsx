@@ -7,20 +7,20 @@ import { Button } from "@/components/ui/button";
 export function Navbar() {
   return (
     <nav className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-16 items-center justify-between">
+      <div className="container flex h-16 items-center justify-between mx-auto">
         <Link href="/" className="flex items-center space-x-2">
-          <span className="text-xl font-bold tracking-tight">HypeShelf</span>
+          <span className="text-xl font-bold tracking-tight text-[var(--brand-primary)]">HypeShelf</span>
         </Link>
 
         <div className="flex items-center gap-4">
           <SignedOut>
             <Link href="/sign-in">
-              <Button variant="ghost">Sign In</Button>
+              <Button variant="ghost" className="hover:text-[var(--brand-primary)]">Sign In</Button>
             </Link>
           </SignedOut>
           <SignedIn>
             <Link href="/dashboard">
-              <Button variant="ghost">Dashboard</Button>
+              <Button variant="ghost" className="hover:text-[var(--brand-primary)]">Dashboard</Button>
             </Link>
             <UserButton afterSignOutUrl="/" />
           </SignedIn>

@@ -35,16 +35,123 @@ export const list = query({
         .take(50);
     }
 
-    return await Promise.all(
-      recommendations.map(async (rec) => {
-        const user = await ctx.db.get(rec.userId);
-        return {
-          ...rec,
-          userName: user?.name ?? "Unknown",
-          userImageUrl: user?.imageUrl,
-        };
-      }),
+    // Get current user for auth context
+    const identity = await ctx.auth.getUserIdentity();
+    let currentUser = null;
+    if (identity) {
+      currentUser = await ctx.db
+        .query("users")
+        .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
+        .unique();
+    }
+
+    // Batch fetch all unique users to avoid N+1
+    const uniqueUserIds = [...new Set(recommendations.map((rec) => rec.userId))];
+    const users = await Promise.all(
+      uniqueUserIds.map((userId) => ctx.db.get(userId))
     );
+    const userMap = new Map(
+      users.filter((u): u is NonNullable<typeof u> => u !== null).map((u) => [u._id, u])
+    );
+
+    return recommendations.map((rec) => {
+      const user = userMap.get(rec.userId);
+      return {
+        ...rec,
+        userName: user?.name ?? "Unknown",
+        userImageUrl: user?.imageUrl,
+        // Include auth context for UI
+        currentUserRole: currentUser?.role,
+        isOwner: currentUser ? rec.userId === currentUser._id : false,
+      };
+    });
+  },
+});
+
+export const listByUser = query({
+  args: {
+    genre: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Unauthenticated");
+    }
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
+      .unique();
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    const isAdmin = user.role === "admin";
+    let recommendations;
+
+    if (args.genre) {
+      if (isAdmin) {
+        // Admin: get all recommendations filtered by genre
+        recommendations = await ctx.db
+          .query("recommendations")
+          .withIndex("by_genre")
+          .filter((q) => q.eq(q.field("genre"), args.genre as any))
+          .order("desc")
+          .take(50);
+      } else {
+        // User: get only their recommendations filtered by genre
+        recommendations = await ctx.db
+          .query("recommendations")
+          .withIndex("by_user")
+          .filter((q) =>
+            q.and(
+              q.eq(q.field("genre"), args.genre as any),
+              q.eq(q.field("userId"), user._id),
+            ),
+          )
+          .order("desc")
+          .take(50);
+      }
+    } else {
+      if (isAdmin) {
+        // Admin: get all recommendations
+        recommendations = await ctx.db
+          .query("recommendations")
+          .order("desc")
+          .take(50);
+      } else {
+        // User: get only their recommendations
+        recommendations = await ctx.db
+          .query("recommendations")
+          .withIndex("by_user")
+          .filter((q) => q.eq(q.field("userId"), user._id))
+          .order("desc")
+          .take(50);
+      }
+    }
+
+    // Batch fetch all unique users to avoid N+1
+    const uniqueUserIds = [...new Set(recommendations.map((rec) => rec.userId))];
+    const users = await Promise.all(
+      uniqueUserIds.map((userId) => ctx.db.get(userId))
+    );
+    const userMap = new Map(
+      users.filter((u): u is NonNullable<typeof u> => u !== null).map((u) => [u._id, u])
+    );
+
+    return recommendations.map((rec) => {
+      const recUser = userMap.get(rec.userId);
+      return {
+        ...rec,
+        userName: recUser?.name ?? "Unknown",
+        userImageUrl: recUser?.imageUrl,
+        // Include current user's role for UI checks
+        currentUserRole: user.role,
+        // Include whether this is the current user's recommendation
+        isOwner: rec.userId === user._id,
+      };
+    });
   },
 });
 

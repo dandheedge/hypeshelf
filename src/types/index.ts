@@ -20,6 +20,9 @@ export interface Recommendation {
   isStaffPick: boolean;
   userName: string;
   userImageUrl?: string;
+  // Server-provided auth context
+  currentUserRole?: UserRole;
+  isOwner?: boolean;
 }
 
 export type UserRole = "admin" | "user";

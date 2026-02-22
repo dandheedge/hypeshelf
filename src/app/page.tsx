@@ -10,7 +10,9 @@ export default function HomePage() {
   return (
     <PageShell>
       <div className="text-center mb-12">
-        <h1 className="text-4xl font-bold tracking-tight mb-4">HypeShelf</h1>
+        <h1 className="text-4xl font-bold tracking-tight mb-4">
+          <span className="text-[var(--brand-primary)]">Hype</span><span className="text-[var(--brand-accent)]">Shelf</span>
+        </h1>
         <p className="text-xl text-muted-foreground mb-8">
           Collect and share the stuff you're hyped about
         </p>
