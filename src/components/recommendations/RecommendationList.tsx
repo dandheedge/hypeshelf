@@ -18,7 +18,7 @@ export function RecommendationList({
   const [selectedGenre, setSelectedGenre] = useState<string | undefined>();
   const recommendations = useQuery(
     api.recommendations.list,
-    selectedGenre ? { genre: selectedGenre } : "skip",
+    selectedGenre ? { genre: selectedGenre } : undefined,
   );
 
   return (

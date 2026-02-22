@@ -4,7 +4,9 @@
       "Bash(bun:*)",
       "Bash(source:*)",
       "Bash(nvm use:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(pwd:*)",
+      "Bash(head:*)"
     ]
   }
 }
