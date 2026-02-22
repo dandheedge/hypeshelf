@@ -1,7 +1,10 @@
 import { Webhook } from "svix";
 import { headers } from "next/headers";
-import { convex } from "@/convex/_generated/server";
-import { api } from "@/convex/_generated";
+import { ConvexHttpClient } from "convex/browser";
+
+const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!) as {
+  mutation: (name: string, args: any) => Promise<any>;
+};
 
 export async function POST(req: Request) {
   const WEBHOOK_SECRET = process.env.CLERK_WEBHOOK_SECRET;
@@ -11,7 +14,7 @@ export async function POST(req: Request) {
   }
 
   // Get headers
-  const headerPayload = headers();
+  const headerPayload = await headers();
   const svixId = headerPayload.get("svix-id");
   const svixTimestamp = headerPayload.get("svix-timestamp");
   const svixSignature = headerPayload.get("svix-signature");
@@ -46,7 +49,7 @@ export async function POST(req: Request) {
     switch (type) {
       case "user.created":
       case "user.updated":
-        await convex.mutation.users.upsertFromClerk({
+        await convex.mutation("users:upsertFromClerk", {
           clerkId: data.id,
           email: data.email_addresses[0].email_address,
           name: `${data.first_name || ""} ${data.last_name || ""}`.trim() || data.username || "User",
@@ -54,7 +57,7 @@ export async function POST(req: Request) {
         });
         break;
       case "user.deleted":
-        await convex.mutation.users.deleteUser({
+        await convex.mutation("users:deleteUser", {
           clerkId: data.id,
         });
         break;

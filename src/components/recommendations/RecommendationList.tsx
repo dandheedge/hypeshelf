@@ -18,7 +18,7 @@ export function RecommendationList({
   const [selectedGenre, setSelectedGenre] = useState<string | undefined>();
   const recommendations = useQuery(
     editable ? api.recommendations.listByUser : api.recommendations.list,
-    selectedGenre ? { genre: selectedGenre } : undefined,
+    selectedGenre ? { genre: selectedGenre } : {},
   );
 
   return (
