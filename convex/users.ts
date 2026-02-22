@@ -43,3 +43,17 @@ export const getCurrentUser = query({
     return user;
   },
 });
+
+export const deleteUser = mutation({
+  args: { clerkId: v.string() },
+  handler: async (ctx, args) => {
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", args.clerkId))
+      .unique();
+
+    if (user) {
+      await ctx.db.delete(user._id);
+    }
+  },
+});
